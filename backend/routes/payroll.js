@@ -234,4 +234,28 @@ router.put('/:id', async (req, res) => {
     })
   }
 })
+router.post('/export-group', async (req, res) => {
+  try {
+    const { key, rows } = req.body
+    const wb = XLSX.utils.book_new()
+    const sheetData = rows.map(r => ({
+      NOPEG: r.nopeg,
+      'NAMA PEGAWAI': r.nama,
+      PROJECT: r.project,
+      UNIT: r.unit,
+      REKENING: r.rekening,
+      BANK: r.bank,
+      TAHAP: r.tahap,
+      'JUMLAH BAYAR': r.jumlahBayar,
+    }))
+    const ws = XLSX.utils.json_to_sheet(sheetData)
+    XLSX.utils.book_append_sheet(wb, ws, key.substring(0, 31))
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
+    res.setHeader('Content-Disposition', `attachment; filename=${key}.xlsx`)
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    res.send(buffer)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
 module.exports = router;
