@@ -125,7 +125,7 @@ export default function Dashboard() {
     <div style={{ padding: 20, background: '#0F0F1A', minHeight: '100%', color: '#E2E8F0' }}>
 
       {/* STATS */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px,1fr))', gap: 12, marginBottom: 20 }}>
         {statsCard.map(({ label, value, color, sub }) => (
           <div
           key={label}
@@ -155,7 +155,7 @@ export default function Dashboard() {
       {/* SEARCH & FILTER */}
       <div style={{ background: '#1A1A2E', borderRadius: 14, padding: 16, marginBottom: 16, border: '1px solid rgba(255,255,255,0.08)' }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: '#A78BFA', marginBottom: 12 }}>🔍 Cari & Filter Data</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px,1fr))', gap: 10 }}>
           <div style={{ position: 'relative' }}>
             <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#64748B', fontSize: 14 }}>🔍</span>
             <input value={search} onChange={e => setSearch(e.target.value)}

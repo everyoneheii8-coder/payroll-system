@@ -119,12 +119,12 @@ export default function BankPage() {
     <div style={{ padding: 20, background: '#0F0F1A', minHeight: '100%', color: '#E2E8F0' }}>
 
       {/* HEADER */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div style={{ fontSize: 18, fontWeight: 700, color: '#fff' }}>Payroll Per Bank & Tahap</div>
           <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>{filteredBank.length} kelompok · diurutkan per bank & tahap</div>
         </div>
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: 'relative', flex: '1 1 280px', maxWidth: 280, width: '100%' }}>
           <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#64748B' }}>🔍</span>
           <input
             placeholder="Cari bank..."
@@ -134,7 +134,7 @@ export default function BankPage() {
               padding: '10px 14px 10px 32px',
               borderRadius: 10,
               border: '1px solid rgba(255,255,255,0.1)',
-              width: 240,
+              width: '100%',
               background: '#1A1A2E',
               color: '#E2E8F0',
               fontSize: 12,
