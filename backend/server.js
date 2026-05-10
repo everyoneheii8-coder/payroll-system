@@ -30,3 +30,4 @@ app.get("/", (req, res) => {
 app.listen(process.env.PORT || 5000, () => {
   console.log("🚀 Server jalan di port 5000");
 });
+// test update
