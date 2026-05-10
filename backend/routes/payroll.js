@@ -258,4 +258,34 @@ router.post('/export-group', async (req, res) => {
     res.status(500).json({ error: err.message })
   }
 })
+// DELETE pegawai
+router.delete('/:id', async (req, res) => {
+  try {
+    await Payroll.findByIdAndDelete(req.params.id)
+    res.json({ success: true })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST tambah pegawai manual
+router.post('/tambah', async (req, res) => {
+  try {
+    const pegawai = new Payroll({
+      no: req.body.no,
+      nopeg: req.body.nopeg,
+      nama: req.body.nama,
+      project: req.body.project,
+      unit: req.body.unit,
+      jumlahBayar: req.body.jumlahBayar,
+      rekening: req.body.rekening,
+      bank: req.body.bank,
+      tahap: req.body.tahap,
+    })
+    await pegawai.save()
+    res.json({ success: true, data: pegawai })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
 module.exports = router;
