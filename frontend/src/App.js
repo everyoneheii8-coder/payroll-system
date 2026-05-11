@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Toaster } from 'react-hot-toast'
 import Sidebar from './components/Sidebar'
 import Dashboard from './components/Dashboard'
 import ImportPage from './components/ImportPage'
-import { Upload, Download } from 'lucide-react'
+import { Upload, Download, Menu, X } from 'lucide-react'
 import axios from 'axios'
 import ProjectPage from './components/ProjectPage'
 import BankPage from './components/BankPage'
@@ -12,7 +12,19 @@ import HistoryPage from './components/HistoryPage'
 
 export default function App() {
   const [active, setActive] = useState('dashboard')
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 768)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768
+      setIsMobile(mobile)
+      if (!mobile) setSidebarOpen(true)
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   const exportGrouped = async () => {
     const res = await axios.get('http://localhost:5000/api/payroll/export-grouped', { responseType: 'blob' })
@@ -27,18 +39,26 @@ export default function App() {
   }
 
   return (
-    <div style={{ display: 'flex', height: '100vh', fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'Inter, sans-serif', position: 'relative' }}>
       <Toaster position="top-right" />
-      <Sidebar active={active} setActive={setActive} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      <Sidebar active={active} setActive={setActive} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} isMobile={isMobile} />
+      {sidebarOpen && isMobile && (
+        <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 15 }} />
+      )}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#F0EFFF', overflow: 'hidden' }}>
-        <div style={{ background: '#fff', padding: '10px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '0.5px solid #CECBF6' }}>
-          <div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: '#26215C' }}>
-              {{ dashboard: 'Dashboard', import: 'Import Data', project: 'Per Project', bank: 'Per Bank', export: 'Export' }[active]}
+        <div style={{ background: '#fff', padding: '10px 20px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12, borderBottom: '0.5px solid #CECBF6' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <button onClick={() => setSidebarOpen(prev => !prev)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#534AB7', color: '#fff', border: 'none', borderRadius: 8, padding: '10px', cursor: 'pointer' }}>
+              {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
+            </button>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#26215C' }}>
+                {{ dashboard: 'Dashboard', import: 'Import Data', project: 'Per Project', bank: 'Per Bank', export: 'Export' }[active]}
+              </div>
+              <div style={{ fontSize: 11, color: '#7F77DD' }}>Periode aktif: Mei 2026</div>
             </div>
-            <div style={{ fontSize: 11, color: '#7F77DD' }}>Periode aktif: Mei 2026</div>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button onClick={() => setActive('import')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#534AB7', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
               <Upload size={14} /> Import Excel
             </button>
@@ -61,7 +81,7 @@ export default function App() {
               <div style={{ fontSize: 12, color: '#64748B', marginTop: 4 }}>Pilih jenis export yang kamu butuhkan</div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, maxWidth: 900 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16, maxWidth: 900 }}>
 
               {/* Card 1 - Export Per Project */}
               <div style={{
