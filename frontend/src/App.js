@@ -9,12 +9,20 @@ import ProjectPage from './components/ProjectPage'
 import BankPage from './components/BankPage'
 import ProfilePage from './components/ProfilePage'
 import HistoryPage from './components/HistoryPage' 
+import LoginPage from './components/LoginPage'
+import ManageRolePage from './components/ManageRolePage'
+import AdminKaryawan from './components/AdminKaryawan'
 
 export default function App() {
   const [active, setActive] = useState('dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 768)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [user, setUser] = useState(
 
+  JSON.parse(
+    localStorage.getItem('user')
+  )
+)
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth < 768
@@ -25,7 +33,89 @@ export default function App() {
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+  const [roles, setRoles] = useState(
 
+  JSON.parse(
+    localStorage.getItem('roles')
+  ) || {
+    admin: {
+      dashboard: true,
+      import: true,
+      project: true,
+      bank: true,
+      export: true,
+      history: true,
+      manageRole: true,
+      editPayroll: true,
+      deletePayroll: true,
+      editTahap: true
+    },
+    sdm: {
+      dashboard: true,
+      import: true,
+      project: true,
+      bank: true,
+      export: true,
+      history: true,
+      manageRole: true,
+      editPayroll: true,
+      deletePayroll: true,
+      editTahap: true
+    },
+
+    akuntansi: {
+      dashboard: true,
+      import: false,
+      project: true,
+      bank: true,
+      export: true,
+      history: true,
+      manageRole: false,
+      editPayroll: false,
+      deletePayroll: false,
+      editTahap: false
+    },
+
+    bendahara: {
+      dashboard: true,
+      import: false,
+      project: false,
+      bank: true,
+      export: true,
+      history: true,
+      manageRole: false,
+      editPayroll: false,
+      deletePayroll: false,
+      editTahap: false
+    },
+
+    billing: {
+      dashboard: true,
+      import: false,
+      project: true,
+      bank: false,
+      export: false,
+      history: false,
+      manageRole: false,
+      editPayroll: false,
+      deletePayroll: false,
+      editTahap: true
+    }
+
+  }
+)
+const currentPermission =
+  user
+    ? (roles[user.role] || roles['sdm'])
+    : null
+useEffect(() => {
+
+  localStorage.setItem(
+    'roles',
+    JSON.stringify(roles)
+  )
+
+}, [roles])
   const exportGrouped = async () => {
     const res = await axios.get('http://localhost:5000/api/payroll/export-grouped', { responseType: 'blob' })
     const url = URL.createObjectURL(new Blob([res.data]))
@@ -37,11 +127,16 @@ export default function App() {
     const url = URL.createObjectURL(new Blob([res.data]))
     const a = document.createElement('a'); a.href = url; a.download = 'payroll_per_bank.xlsx'; a.click()
   }
+  if (!user) {
 
+  return (
+    <LoginPage setUser={setUser} />
+  )
+}
   return (
     <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'Inter, sans-serif', position: 'relative' }}>
       <Toaster position="top-right" />
-      <Sidebar active={active} setActive={setActive} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} isMobile={isMobile} />
+      <Sidebar active={active} setActive={setActive} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} isMobile={isMobile} permissions={currentPermission} user={user} />
       {sidebarOpen && isMobile && (
         <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 15 }} />
       )}
@@ -50,10 +145,20 @@ export default function App() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <button onClick={() => setSidebarOpen(prev => !prev)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#534AB7', color: '#fff', border: 'none', borderRadius: 8, padding: '10px', cursor: 'pointer' }}>
               {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
-            </button>
+            </button> 
             <div>
               <div style={{ fontSize: 15, fontWeight: 700, color: '#26215C' }}>
-                {{ dashboard: 'Dashboard', import: 'Import Data', project: 'Per Project', bank: 'Per Bank', export: 'Export' }[active]}
+                {{
+                dashboard: 'Dashboard',
+                import: 'Import Data',
+                project: 'Per Project',
+                bank: 'Per Bank',
+                export: 'Export',
+                history: 'Riwayat',
+                profile: 'Profil',
+                'manage-role': 'Kelola Role',
+                'admin-karyawan': 'Kelola Karyawan'
+              }[active] || 'Dashboard'}
               </div>
               <div style={{ fontSize: 11, color: '#7F77DD' }}>Periode aktif: Mei 2026</div>
             </div>
@@ -68,12 +173,33 @@ export default function App() {
           </div>
         </div>
         <div style={{ flex: 1, overflowY: 'auto' }}>
-          {active === 'dashboard' && <Dashboard />}
-          {active === 'project' && <ProjectPage />}
-          {active === 'bank' && <BankPage />}
-          {active === 'import' && <ImportPage />}
+          {active === 'dashboard' && (
+            <Dashboard permissions={currentPermission} />
+          )}
+          
+          {active === 'project' && (
+            <ProjectPage permissions={currentPermission} />
+          )}
+
+          {active === 'bank' && (
+            <BankPage permissions={currentPermission} />
+          )}
+
+          {active === 'import' && (
+            <ImportPage permissions={currentPermission} />
+          )}
+
+          {active === 'history' && (
+            <HistoryPage permissions={currentPermission} />
+          )}
           {active === 'profile' && <ProfilePage />}
-          {active === 'history' && <HistoryPage />}
+          {active === 'admin-karyawan' && user?.role === 'admin' && <AdminKaryawan />}
+          {active === 'manage-role' && (
+            <ManageRolePage
+              roles={roles}
+              setRoles={setRoles}
+            />
+          )}
           {active === 'export' && (
           <div style={{ padding: 24, background: '#0F0F1A', minHeight: '100%' }}>
             <div style={{ marginBottom: 24 }}>

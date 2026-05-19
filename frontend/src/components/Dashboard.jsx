@@ -17,7 +17,7 @@ const bankBar = {
 
 const emptyForm = { no: '', nopeg: '', nama: '', project: '', unit: '', jumlahBayar: '', rekening: '', bank: '', tahap: '' }
 
-export default function Dashboard() {
+export default function Dashboard({ permissions }) {
   const [allData, setAllData] = useState([])
   const [editing, setEditing] = useState(null)
   const [showTambah, setShowTambah] = useState(false)
@@ -120,7 +120,29 @@ export default function Dashboard() {
     } catch { alert('Gagal tambah pegawai!') }
     finally { setLoadingTambah(false) }
   }
-
+  const handleUbahTahapProject = async () => {
+  if (!selectedProject) return alert('Pilih project dulu!')
+  setLoadingTahapProject(true)
+  try {
+    const targets = allData.filter(d => d.project === selectedProject)
+    await Promise.all(
+      targets.map(d =>
+        axios.put(`http://localhost:5000/api/payroll/${d._id}`, {
+          nama: d.nama, rekening: d.rekening,
+          bank: d.bank, tahap: newTahapProject
+        })
+      )
+    )
+    setModalTahapProject(false)
+    setSelectedProject('')
+    await fetchData()
+  } catch { alert('Gagal update!') }
+  finally { setLoadingTahapProject(false) }
+}
+  const [modalTahapProject, setModalTahapProject] = useState(false)
+  const [selectedProject, setSelectedProject] = useState('')
+  const [newTahapProject, setNewTahapProject] = useState('1')
+  const [loadingTahapProject, setLoadingTahapProject] = useState(false)
   return (
     <div style={{ padding: 20, background: '#0F0F1A', minHeight: '100%', color: '#E2E8F0' }}>
 
@@ -191,12 +213,18 @@ export default function Dashboard() {
           <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>Data Payroll</span>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <span style={{ fontSize: 11, color: '#64748B' }}>Halaman {currentPage} / {totalPages || 1} · {filtered.length} data</span>
+             {(permissions.import || permissions.createPayroll) && (
             <button onClick={() => setShowTambah(true)}
-              style={{ background: 'rgba(16,185,129,0.2)', color: '#b6edd9', border: '1px solid rgba(105, 13, 158, 0.3)', borderRadius: 8, padding: '5px 12px', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>
+              style={{ background: 'rgba(16,185,129,0.2)', color: '#b6edd9', border: '1px solid rgba(105,13,158,0.3)', borderRadius: 8, padding: '5px 12px', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>
               + Tambah Pegawai
             </button>
-          </div>
+          )}
+          <button onClick={() => setModalTahapProject(true)}
+            style={{ background: 'rgba(217,119,6,0.2)', color: '#FCD34D', border: '1px solid rgba(217,119,6,0.3)', borderRadius: 8, padding: '5px 12px', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>
+            📋 Ubah Tahap per Project
+          </button>
         </div>
+      </div>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead>
@@ -225,22 +253,50 @@ export default function Dashboard() {
                   <td style={{ padding: '10px 12px' }}>
                     <span style={{ ...(bankColors[row.bank] || { bg: '#1a1a2e', color: '#94A3B8' }), borderRadius: 20, fontSize: 10, padding: '3px 9px', fontWeight: 600 }}>{row.bank}</span>
                   </td>
-                  <td style={{ padding: '10px 12px' }}>
-                    <span style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 6, padding: '2px 8px', color: '#94A3B8' }}>Tahap {row.tahap}</span>
+                  <td style={{ padding: '6px 12px' }}>
+              <select
+                value={row.tahap || ''}
+                onChange={async (e) => {
+                  const newTahap = e.target.value
+                  try {
+                    await axios.put(`http://localhost:5000/api/payroll/${row._id}`, {
+                      nama: row.nama,
+                      rekening: row.rekening,
+                      bank: row.bank,
+                      tahap: newTahap
+                    })
+                    await fetchData()
+                  } catch { alert('Gagal update tahap!') }
+                }}
+                style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  color: '#94A3B8', border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 6, padding: '4px 8px', fontSize: 11,
+                  cursor: 'pointer', outline: 'none', width: 80
+                }}
+              >
+                {[1,2,3,4,5,6,7,8,9].map(n => (
+                  <option key={n} value={String(n)} style={{ background: '#1A1A2E' }}>Tahap {n}</option>
+                ))}
+              </select>
                   </td>
                   <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: '#34D399' }}>
                     Rp {Number(row.jumlahBayar || 0).toLocaleString('id-ID')}
                   </td>
                   <td style={{ padding: '10px 12px' }}>
                     <div style={{ display: 'flex', gap: 6 }}>
-                      <button onClick={() => setEditing(row)}
-                        style={{ background: 'rgba(124,58,237,0.25)', color: '#A78BFA', border: '1px solid rgba(124,58,237,0.4)', borderRadius: 8, padding: '5px 10px', cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
-                        Edit
-                      </button>
-                      <button onClick={() => setKonfirmasiHapus(row)}
-                        style={{ background: 'rgba(239,68,68,0.15)', color: '#F87171', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '5px 10px', cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
-                        Hapus
-                      </button>
+                      {permissions.editPayroll && (
+                        <button onClick={() => setEditing(row)}
+                          style={{ background: 'rgba(124,58,237,0.25)', color: '#A78BFA', border: '1px solid rgba(124,58,237,0.4)', borderRadius: 8, padding: '5px 10px', cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
+                          Edit
+                        </button>
+                      )}
+                      {permissions.deletePayroll && (
+                        <button onClick={() => setKonfirmasiHapus(row)}
+                          style={{ background: 'rgba(239,68,68,0.15)', color: '#F87171', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '5px 10px', cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
+                          Hapus
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -291,7 +347,7 @@ export default function Dashboard() {
       </div>
 
       {/* MODAL KONFIRMASI HAPUS */}
-      {konfirmasiHapus && (
+      {permissions.deletePayroll && konfirmasiHapus && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999 }}>
           <div style={{ background: '#1A1A2E', padding: 28, borderRadius: 16, width: 380, border: '1px solid rgba(239,68,68,0.3)' }}>
             <div style={{ fontSize: 24, marginBottom: 12 }}>🗑️</div>
@@ -356,7 +412,7 @@ export default function Dashboard() {
       )}
 
       {/* MODAL EDIT */}
-      {editing && (
+      {permissions.editPayroll && editing && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999 }}>
           <div style={{ background: '#1A1A2E', padding: 28, borderRadius: 16, width: 420, border: '1px solid rgba(255,255,255,0.1)' }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Edit Payroll</div>
@@ -398,6 +454,65 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+      {/* MODAL UBAH TAHAP PER PROJECT */}
+{modalTahapProject && (
+  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999 }}>
+    <div style={{ background: '#1A1A2E', padding: 28, borderRadius: 16, width: 420, border: '1px solid rgba(217,119,6,0.3)' }}>
+      <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 4 }}>📋 Ubah Tahap per Project</div>
+      <div style={{ fontSize: 12, color: '#64748B', marginBottom: 20 }}>
+        Semua pegawai di project yang dipilih akan berubah tahapnya sekaligus
+      </div>
+
+      <div style={{ marginBottom: 14 }}>
+        <label style={{ fontSize: 11, color: '#94A3B8', display: 'block', marginBottom: 6 }}>Pilih Project</label>
+        <select
+          value={selectedProject}
+          onChange={e => setSelectedProject(e.target.value)}
+          style={{ background: '#0D0D1F', color: '#E2E8F0', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 12px', fontSize: 12, outline: 'none', width: '100%', cursor: 'pointer' }}>
+          <option value=''>-- Pilih Project --</option>
+          {projects.filter(p => p !== 'Semua').map(p => {
+            const count = allData.filter(d => d.project === p).length
+            return <option key={p} value={p} style={{ background: '#1A1A2E' }}>{p} ({count} pegawai)</option>
+          })}
+        </select>
+      </div>
+
+      <div style={{ marginBottom: 20 }}>
+        <label style={{ fontSize: 11, color: '#94A3B8', display: 'block', marginBottom: 6 }}>Set Tahap Baru</label>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {[1,2,3,4,5].map(n => (
+            <div key={n} onClick={() => setNewTahapProject(String(n))}
+              style={{
+                flex: 1, padding: '10px 0', textAlign: 'center', borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: 14,
+                background: newTahapProject === String(n) ? '#D97706' : 'rgba(255,255,255,0.06)',
+                color: newTahapProject === String(n) ? '#fff' : '#64748B',
+                border: `1.5px solid ${newTahapProject === String(n) ? '#D97706' : 'rgba(255,255,255,0.08)'}`,
+                transition: 'all 0.15s'
+              }}>
+              {n}
+            </div>
+          ))}
+        </div>
+        {selectedProject && (
+          <div style={{ marginTop: 10, padding: '8px 12px', background: 'rgba(217,119,6,0.1)', borderRadius: 8, fontSize: 11, color: '#FCD34D' }}>
+            ⚠️ {allData.filter(d => d.project === selectedProject).length} pegawai di <strong>{selectedProject}</strong> akan diubah ke Tahap {newTahapProject}
+          </div>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', gap: 10 }}>
+        <button onClick={() => { setModalTahapProject(false); setSelectedProject('') }}
+          style={{ flex: 1, padding: 10, background: 'rgba(255,255,255,0.06)', color: '#94A3B8', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>
+          Batal
+        </button>
+        <button onClick={handleUbahTahapProject} disabled={loadingTahapProject || !selectedProject}
+          style={{ flex: 1, padding: 10, background: loadingTahapProject || !selectedProject ? '#374151' : '#D97706', color: '#fff', border: 'none', borderRadius: 8, cursor: loadingTahapProject || !selectedProject ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 700 }}>
+          {loadingTahapProject ? 'Menyimpan...' : '✓ Ubah Tahap Serentak'}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   )
 }

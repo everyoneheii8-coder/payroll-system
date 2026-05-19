@@ -8,6 +8,29 @@ console.log('PAYROLL MODEL:', Payroll);
 console.log('HISTORY MODEL:', History);
 
 const upload = multer({ storage: multer.memoryStorage() });
+const getValue = (row, keys) => {
+
+  const normalize = (text) =>
+
+    text
+      ?.toString()
+      .toLowerCase()
+      .replace(/\s+/g, '')
+      .trim()
+
+  const foundKey = Object.keys(row).find(
+
+    k =>
+      keys.some(
+        key =>
+          normalize(k) === normalize(key)
+      )
+  )
+
+  return foundKey
+    ? row[foundKey]
+    : ''
+}
 
 router.post('/import', upload.single('file'), async (req, res) => {
   try {
@@ -29,7 +52,10 @@ router.post('/import', upload.single('file'), async (req, res) => {
     const data = XLSX.utils.sheet_to_json(sheet);
 
     console.log('DATA EXCEL:', data);
-
+    console.log(
+      'HEADERS:',
+      Object.keys(data[0])
+    )
     if (!data.length) {
       return res.status(400).json({
         error: 'Excel kosong atau format salah'
@@ -37,15 +63,37 @@ router.post('/import', upload.single('file'), async (req, res) => {
     }
 
     const formatted = data.map(row => ({
-      no: row['no'] || row['NO'],
-      nopeg: row['NOPEG'] || row['nopeg'],
-      nama: row['Nama pegawai'] || row['NAMA PEGAWAI'] || row['nama'],
-      project: row['project'] || row['PROJECT'],
-      unit: row['unit'] || row['UNIT'],
-      jumlahBayar: row['jumbyar'] || row['jumlahbayar'] || row['JUMLAH BAYAR'],
-      rekening: row['rekening'] || row['REKENING'],
-      bank: row['bank'] || row['BANK'],
-      tahap: row['tahap'] || row['TAHAP'],
+      no: getValue(row, [
+        'no'
+      ]),
+      nopeg: getValue(row, [
+        'nopeg'
+      ]),
+      nama: getValue(row, [
+        'nama pegawai',
+        'nama'
+      ]),
+      project: getValue(row, [
+        'project'
+      ]),
+      unit: getValue(row, [
+        'unit'
+      ]),
+      jumlahBayar: getValue(row, [
+        'jumbyar',
+        'jumlah bayar',
+        'jumlahbayar'
+      ]),
+      rekening: getValue(row, [
+        'rekening'
+      ]),
+      bank: getValue(row, [
+        'bank'
+      ]),
+      tahap: getValue(row, [
+        'tahap'
+      ])
+
     }));
 
     console.log('FORMATTED:', formatted);
